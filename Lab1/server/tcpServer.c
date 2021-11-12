@@ -1,6 +1,8 @@
 #include "operations.h"
 
 
+const char* SERVER_IP= "192.168.1.110";
+
 int main(int argc, char *argv[]){
     if(argc != 2){
         printf("Invalid Arguments\n");
@@ -21,7 +23,7 @@ int main(int argc, char *argv[]){
     servAddr.sin_addr.s_addr= htonl(INADDR_ANY);
     servAddr.sin_port= htons(servPort);
 
-    int rtnVal= inet_pton(AF_INET, "192.168.1.110", &servAddr.sin_addr.s_addr);
+    int rtnVal= inet_pton(AF_INET, SERVER_IP, &servAddr.sin_addr.s_addr);
 
 
     printf("Binding...\n");
