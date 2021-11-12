@@ -22,8 +22,33 @@ int manageSendingData(char* receivedBuffer, int bytesReceived){
     if(strstr(receivedBuffer, "GET") != 0)
         return handleGetRequest(receivedBuffer,bytesReceived);
     else if(strstr(receivedBuffer,"POST") != 0)
-        printf("Post Request!\n");    
+        handlePostRequest(receivedBuffer, bytesReceived);
+    return 0;
 }
+
+void handlePostRequest(char* buffer, int bytesReceived){
+    //Look for content-type and size
+    char* contentTypePtr= strstr(buffer, "Content-Type") + 14;
+    char* typeTerminator= strstr(contentTypePtr, "\r");
+
+    char* contentLengthPtr= strstr(buffer,"Content-Length:") + 15;
+    char* lengthTerminator= strstr(contentLengthPtr,"\r");
+
+    char *data= strstr(buffer,"\r\n\r\n");
+    *data= 0;
+    data+=4;
+
+    *lengthTerminator=0;
+    *typeTerminator=0;
+    printf("Content is <%s>\n",contentTypePtr);
+    printf("Length is %d\n",atoi(contentLengthPtr));
+    printf("Data is \"\"\"%s\"\"\"\n",data);
+
+    sendHttpOK(0,0);
+
+    close(clientSocket);
+
+} 
 
 int handleGetRequest(char* receivedBuffer, int numBytesReceived){
     //It starts with a GET, so we skip 4 characters
@@ -89,6 +114,9 @@ void sendHttpOK(int fileSize,char *contentType){
     sprintf(buffer, "HTTP/1.1 200 OK\r\n");
     send(clientSocket, buffer, strlen(buffer),0);
 
+
+
+    if(contentType != 0){
     sprintf(buffer, "Connection: keep-alive\r\n");
     send(clientSocket, buffer, strlen(buffer), 0);
 
@@ -97,8 +125,9 @@ void sendHttpOK(int fileSize,char *contentType){
 
     sprintf(buffer, "Content-Type: %s\r\n",contentType);
     send(clientSocket, buffer, strlen(buffer), 0);
+    }
 
-        // sprintf(buffer, "Transfer-Encoding: chunked\r\n");
+    // sprintf(buffer, "Transfer-Encoding: chunked\r\n");
     // send(clientSocket, buffer, strlen(buffer), 0);
 
 
