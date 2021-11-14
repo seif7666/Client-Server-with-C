@@ -22,13 +22,14 @@ typedef struct command{
     char request;
     char hostname[HOSTNAME_SIZE];
     char filePath[HOSTNAME_SIZE];
-    int port;
+    char port[5];
     struct command *next;
 }Command;
 
 void read_input_file(Command* commands, char* filename);
-void init_command(Command *command,int request,char*filePath,char* hostname, int port);
+void init_command(Command *command,int request,char*filePath,char* hostname, char* port);
 void add_command(Command* commands, Command* command);
 void print_command(Command* command);
+void manage_command(Command command, struct addrinfo hints);
 
 #endif

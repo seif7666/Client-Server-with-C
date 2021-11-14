@@ -10,19 +10,19 @@ void read_input_file(Command* commands, char* filename){
         char* filePath= strtok(NULL," ");
         char* hostname= strtok(NULL, " ");
         char* port= strtok(NULL, " ");
-        int portNumber = port != NULL ? atoi(port): DEFAULT_PORT;
-
+        if (port != NULL)
+            port[strlen(port)-1]= '\0';
         Command *command = (Command*)malloc(sizeof(Command));
-        init_command(command, strcmp(GET_REQUEST_STR,method) ? POST_REQUEST : GET_REQUEST , filePath,hostname, portNumber);
+        init_command(command, strcmp(GET_REQUEST_STR,method) ? POST_REQUEST : GET_REQUEST , filePath,hostname, port ==NULL ? "80":port);
         add_command(commands, command);
     }
 }
 
-void init_command(Command *command,int request,char* filePath,char* hostname, int port){
+void init_command(Command *command,int request,char* filePath,char* hostname, char* port){
     command -> request= request;
     strncpy(command->hostname, hostname,strlen(hostname));
     strncpy(command->filePath, filePath,strlen(filePath));
-    command->port= port;
+    strncpy(command->port, port,strlen(port));
     command->next= NULL;
     print_command(command);
 }
@@ -33,5 +33,5 @@ void add_command(Command* commands, Command* command){
     temp->next= command;
 }
 void print_command(Command* command){
-    printf("Request: %d , FilePath: %s, Hostname: %s, Port: %d\n",command->request, command->filePath,command->hostname,command->port);
+    printf("Request: %d , FilePath: %s, Hostname: %s, Port: %s\n",command->request, command->filePath,command->hostname,command->port);
 }

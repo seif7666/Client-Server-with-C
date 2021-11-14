@@ -1,55 +1,54 @@
 #include "operations.h"
 
 
+void *get_in_addr(struct sockaddr *sa){
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+}
+
 int main(int argc, char** argv){
     Command commands;
     commands.next= NULL;
     read_input_file(&commands, "input.txt");
 
-    /*
-    if(argc != 3){
-        printf("Enter hostname and port!\n");
-        return -1;
-    }
-    char* hostName= argv[1];
-    char* port= argv[2];
-    char ipstr[INET6_ADDRSTRLEN];
 
-    printf("%s:%s\n",hostName,port);
- 
-    struct addrinfo hints , *res, *p;
+    struct addrinfo hints ;
+
     memset(&hints, 0,sizeof(hints));
-    hints.ai_family= AF_UNSPEC;
+    hints.ai_family= AF_INET; 
     hints.ai_socktype= SOCK_STREAM;
 
-    if(getaddrinfo(hostName, NULL, &hints, &res)){
-        printf("Get Addrinfo failed\n");
-        return -1;
+
+    Command* temp = commands.next;
+    while(temp != NULL){
+        manage_command(*temp,hints);
+        temp= temp->next;
     }
-    for(p= res; p!=NULL; p= p->ai_next){
-        void *addr;
-        char* ipver;
-
-        if(p->ai_family == AF_INET){
-            struct sockaddr_in *ipv4= (struct sockaddr_in *)p->ai_addr;
-            addr=  &(ipv4->sin_addr);
-            ipver= "IPV4";
-        }
-        else{
-            struct sockaddr_in6 *ipv6= (struct sockaddr_in6 *)p->ai_addr;
-            addr=  &(ipv6->sin6_addr);
-            ipver= "IPV6";
-        }
-        inet_ntop(p->ai_family,addr,ipstr,sizeof(ipstr));
-        printf(" %s: %s\n",ipver,ipstr);
-        break;
-    }
-
-    //P now points to an address.
-    
-    freeaddrinfo(res);
-
-    */
 
     return 0;
+}
+
+void manage_command(Command command, struct addrinfo hints){
+    struct addrinfo *res;
+    if(getaddrinfo(command.hostname, command.port, &hints, &res)<0){
+        printf("Get add failed!\n");
+        return;
+    }
+    int sock= socket(res->ai_family, res->ai_socktype,res->ai_protocol);
+    if(sock == -1){
+        printf("Socket Failed!\n");
+        return;
+    }
+    if(connect(sock,res->ai_addr, res->ai_addrlen)<0){
+        printf("Failed to connect!\n");
+        return;
+    }
+    char s[INET_ADDRSTRLEN];
+    inet_ntop(res->ai_family, get_in_addr((struct sockaddr *)res->ai_addr),s, sizeof (s));
+    printf("Connected to %s\n",s);
+
+    freeaddrinfo(res);
+    close(sock);
+    
 }
