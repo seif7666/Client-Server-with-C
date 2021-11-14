@@ -6,18 +6,17 @@ int exitWithMessage(char* message){
     exit(-1);
 }
 
-void manageClient(int cs){
+int manageClient(int cs){
     clientSocket= cs;
 
     char buffer[400000];
 
     ssize_t numBytesReceived= recv(clientSocket, buffer, BUFSIZ, 0);
-    buffer[numBytesReceived]= '\0';
-    printf("Received: %s\n",buffer);
 
     char sendingBuffer[400000];
     int length=manageSendingData(buffer, numBytesReceived, sendingBuffer);
     // send(clientSocket,buffer,BUFSIZ,0);
+    return numBytesReceived;
 }
 
 int manageSendingData(char* receivedBuffer, int bytesReceived, char* sendingBuffer){
@@ -36,7 +35,7 @@ int handleGetRequest(char* receivedBuffer, int numBytesReceived, char* sendingBu
         nameEnd++;
     *nameEnd='\0';
     printf("String is %s\n",ptr);
-    FILE *fileptr=fopen(ptr, "rb");
+    FILE *fileptr=fopen(ptr, "r");
     if(fileptr == NULL){
         send_404();
         return 0;
@@ -54,11 +53,12 @@ int handleGetRequest(char* receivedBuffer, int numBytesReceived, char* sendingBu
         
 
     int fileSize= readFile(fileptr,sendingBuffer);
+    printf("Returned from readFile\n");
     char buffer[100];
     sprintf(buffer, "HTTP/1.1 200 OK\r\n");
     send(clientSocket, buffer, strlen(buffer),0);
 
-    sprintf(buffer, "Connection: close\r\n");
+    sprintf(buffer, "Connection: keep-alive\r\n");
     send(clientSocket, buffer, strlen(buffer), 0);
 
     sprintf(buffer, "Content-Length: %u\r\n", fileSize);
@@ -69,6 +69,7 @@ int handleGetRequest(char* receivedBuffer, int numBytesReceived, char* sendingBu
 
     sprintf(buffer, "\r\n");
     send(clientSocket, buffer, strlen(buffer), 0);
+
     
     int totalSize= strlen(sendingBuffer);
     printf("Total Size is %d\n",totalSize);
@@ -91,7 +92,8 @@ int readFile(FILE* fileptr, char* buffer){
         bytesRead += length;
         strcat(buffer,fileBuffer);
     }
-    printf("File:\n\n\n%s\n\n",buffer);
+    // printf("File:\n\n\n%s\n\n",buffer);
+    fclose(fileptr);
     return bytesRead;
 }
 

@@ -1,5 +1,13 @@
 #include "operations.h"
+#include <sys/time.h>
 
+void *get_in_addr(struct sockaddr *sa){
+ if (sa->sa_family == AF_INET) {
+    return &(((struct sockaddr_in*)sa)->sin_addr);
+ }
+
+ return &(((struct sockaddr_in6*)sa)->sin6_addr);
+ }
 
 int main(int argc, char *argv[]){
     if(argc != 2){
@@ -32,25 +40,53 @@ int main(int argc, char *argv[]){
         exitWithMessage("Failed to Listen");
     printf("Listening ...\n");
 
-    while(1){
-        struct sockaddr_in clientAddress;
-        socklen_t clientAddressLen= sizeof(clientAddress);
-        
-        printf("Waiting for connection...\n");
-        int clientSocket= accept(sock, (struct sockaddr *) &clientAddress, &clientAddressLen);
-        if(clientSocket < 0){
-            // WSAGetLastError();
-            printf("Error message %d\n",clientSocket);
-            exitWithMessage("Accept failed!");
-        }
-        
-        char clientName[INET_ADDRSTRLEN];
-        if(inet_ntop(AF_INET ,&clientAddress.sin_addr.s_addr, clientName, sizeof(clientName)) != NULL)
-            printf("Handling client %s/%d\n\n", clientName, ntohs(clientAddress.sin_port));
-        else
-            printf("Unable to get client address\n");
 
-        manageClient(clientSocket);
+    fd_set master, read_fds;
+    int fdmax= sock, newfd;
+    FD_ZERO(&master);
+    FD_ZERO(&read_fds);
+    FD_SET(sock,&master);
+
+
+    struct sockaddr_storage remoteaddr; // client address
+    socklen_t addrlen;
+                    
+
+
+
+
+
+
+    while(1){
+        read_fds= master;
+        printf("Before Select\n");
+        if(select(fdmax+1, &read_fds,NULL,NULL, /*Timout*/NULL) ==-1){
+            exitWithMessage("Select Failed!");
+        }
+        printf("Returned From Select!\n");
+        for(int i= 0; i<= fdmax ; i++){
+            if(FD_ISSET(i,&read_fds)){
+                if(i==sock){
+                    addrlen= sizeof(remoteaddr);
+                    newfd= accept(sock, (struct sockaddr *) &remoteaddr, &addrlen);
+                    if(newfd == -1) exitWithMessage("Accept Failed!");
+
+                    FD_SET(newfd, &master);
+                    if(newfd > fdmax)
+                        fdmax= newfd;
+                    char* remoteIP[INET6_ADDRSTRLEN];
+                    printf("New Connection established with %s\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP,INET6_ADDRSTRLEN));
+                }//i==sock
+                else{
+                    int isConnected=manageClient(i);
+                    if(!isConnected){
+                        // printf("Socket %d disconnected\n",i);
+                        close(i);
+                        FD_CLR(i, &master);
+                    }
+                }
+            }
+        }
     }
     close(sock);
     
