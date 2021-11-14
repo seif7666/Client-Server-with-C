@@ -1,14 +1,12 @@
-#include <stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<unistd.h>
-#include<netdb.h>
-#include<sys/types.h>
-#include<sys/socket.h>
-#include<netinet/in.h>
-#include<arpa/inet.h>
+#include "operations.h"
+
 
 int main(int argc, char** argv){
+    Command commands;
+    commands.next= NULL;
+    read_input_file(&commands, "input.txt");
+
+    /*
     if(argc != 3){
         printf("Enter hostname and port!\n");
         return -1;
@@ -44,8 +42,14 @@ int main(int argc, char** argv){
         }
         inet_ntop(p->ai_family,addr,ipstr,sizeof(ipstr));
         printf(" %s: %s\n",ipver,ipstr);
+        break;
     }
+
+    //P now points to an address.
+    
     freeaddrinfo(res);
+
+    */
 
     return 0;
 }
