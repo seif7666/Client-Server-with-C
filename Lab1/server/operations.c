@@ -8,7 +8,7 @@ int exitWithMessage(char* message){
     exit(-1);
 }
 
-void manageClient(int cs){
+int manageClient(int cs){
     clientSocket= cs;
     char buffer[MAX_FILE_SIZE];
     ssize_t numBytesReceived= recv(clientSocket, buffer, BUFSIZ, 0);
@@ -16,11 +16,12 @@ void manageClient(int cs){
     printf("Received: %s\n",buffer);
     char sendingBuffer[MAX_FILE_SIZE];
     int length=manageSendingData(buffer, numBytesReceived);
+    return numBytesReceived;
 }
 
 int manageSendingData(char* receivedBuffer, int bytesReceived){
     if(strstr(receivedBuffer, "GET") != 0)
-        return handleGetRequest(receivedBuffer,bytesReceived);
+         handleGetRequest(receivedBuffer,bytesReceived);
     else if(strstr(receivedBuffer,"POST") != 0)
         handlePostRequest(receivedBuffer, bytesReceived);
     return 0;
@@ -50,7 +51,7 @@ void handlePostRequest(char* buffer, int bytesReceived){
 
 } 
 
-int handleGetRequest(char* receivedBuffer, int numBytesReceived){
+void handleGetRequest(char* receivedBuffer, int numBytesReceived){
     //It starts with a GET, so we skip 4 characters
     char *ptr= receivedBuffer+5; //Beginning of file name.
     char* nameEnd= ptr;
@@ -77,13 +78,13 @@ int handleGetRequest(char* receivedBuffer, int numBytesReceived){
     readFile(fileptr,sendingBuffer);
     printf("Total Size is %d\n",fileSize);
     ssize_t sent= 0;
-    while(sent < fileSize){
-        ssize_t x=send(clientSocket, sendingBuffer+sent, BUFSIZ, 0);
+    int totalSize=fileSize;
+    while(totalSize >0){
+        ssize_t x=send(clientSocket, sendingBuffer+sent, totalSize, 0);
         if(x < 0)break;
-        sent +=x;
-        printf("Sent %d bytes \n",sent);
+        totalSize -=x;
+        printf("Left %d bytes \n",totalSize);
     }
-    close(clientSocket);
     // send(clientSocket, sendingBuffer, strlen(sendingBuffer), 0);
 }
 
@@ -97,8 +98,9 @@ int readFile(FILE* fileptr, char* buffer){
         bytesRead += length;
         strcat(buffer,fileBuffer);
     }
-    printf("File:\n\n\n%s\n\n",buffer);
-    return 0;
+    // printf("File:\n\n\n%s\n\n",buffer);
+    fclose(fileptr);
+    return bytesRead;
 }
 
 
