@@ -36,6 +36,12 @@ void manage_command(Command command, struct addrinfo hints){
         return;
     }
     int sock= socket(res->ai_family, res->ai_socktype,res->ai_protocol);
+    // fcntl(sock,F_SETFL,O_NONBLOCK);
+    struct timeval tv;
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+
     if(sock == -1){
         printf("Socket Failed!\n");
         return;
@@ -76,6 +82,7 @@ void receiveRequestFile(int socket , char* fileName , char*hostname){
     }
     do{
         bytes= recv(socket,buffer,sizeof(buffer), 0 );
+        printf("Bytes Received: %d\n",bytes);
         fprintf(fp,"%s",buffer);
     }while(bytes>0);
     fclose(fp);
