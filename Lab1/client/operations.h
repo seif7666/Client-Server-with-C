@@ -5,6 +5,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<unistd.h>
+#include <sys/stat.h>
 #include<netdb.h>
 #include<sys/types.h>
 #include<sys/socket.h>
@@ -12,11 +13,13 @@
 #include<arpa/inet.h>
 
 
+
 #define GET_REQUEST 0
 #define POST_REQUEST 1
 #define HOSTNAME_SIZE 30
 #define DEFAULT_PORT 80
 #define GET_REQUEST_STR "client_get"
+#define POST_REQUEST_STR "client_post"
 
 typedef struct command{
     char request;
@@ -34,5 +37,7 @@ void manage_command(Command command, struct addrinfo hints);
 
 void manageGetRequest(Command command, int socket);
 void managePostRequest(Command command, int socket);
+
+void setFilePathAndDirectory(char* fileNameBuffer, const char* request, char* fileName, char* hostName);
 
 #endif

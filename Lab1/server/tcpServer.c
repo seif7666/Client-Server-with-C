@@ -9,7 +9,7 @@ void *get_in_addr(struct sockaddr *sa){
  return &(((struct sockaddr_in6*)sa)->sin6_addr);
  }
 
-const char* SERVER_IP= "192.168.1.110";
+const char* SERVER_IP= "192.168.32.172";
 
 int main(int argc, char *argv[]){
     if(argc != 2){

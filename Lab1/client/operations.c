@@ -35,3 +35,14 @@ void add_command(Command* commands, Command* command){
 void print_command(Command* command){
     printf("Request: %d , FilePath: %s, Hostname: %s, Port: %s\n",command->request, command->filePath,command->hostname,command->port);
 }
+
+
+void setFilePathAndDirectory(char* fileNameBuffer, const char* request, char* fileName, char* hostName){
+    char* token= strtok(hostName,".");
+    token= strtok(NULL,".");
+    printf("Token: %s\n",token);
+    sprintf(fileNameBuffer,"%s_%s",request,token);
+    int check = mkdir(fileNameBuffer,0777);
+
+    sprintf(fileNameBuffer+strlen(fileNameBuffer),"/%s",fileName);
+}

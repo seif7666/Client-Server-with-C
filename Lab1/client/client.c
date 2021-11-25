@@ -32,7 +32,7 @@ int main(int argc, char** argv){
 void manage_command(Command command, struct addrinfo hints){
     struct addrinfo *res;
     if(getaddrinfo(command.hostname, command.port, &hints, &res)<0){
-        printf("Get add failed!\n");
+        printf("Get addr failed for hostname {%s}!\n",command.hostname);
         return;
     }
     int sock= socket(res->ai_family, res->ai_socktype,res->ai_protocol);
@@ -55,22 +55,25 @@ void manage_command(Command command, struct addrinfo hints){
     close(sock);
 }
 void receiveRequestFile(int socket , char* fileName , char*hostname){
-    
+
     char filePath[50];
-    memset(filePath,0,50);
-    strcat(filePath, "GET/");
-    strcat(filePath, fileName);
+    setFilePathAndDirectory(filePath,GET_REQUEST_STR,fileName, hostname);
     printf("%s\n",filePath);
+    FILE *fp= fopen(filePath, "w");
+    if(fp == NULL)
+        printf("NULL\n");
+
     char buffer[BUFSIZ];
     int bytes;
-    FILE *fp= fopen(filePath, "w");
 
     bytes= recv(socket,buffer,sizeof(buffer), 0 );
     char * data= strstr(buffer, "\r\n\r\n");
-    *data= 0;
-    data+=4;
-    printf("\n%s\n",buffer);
-    fprintf(fp, "%s",data);
+    if(data != NULL){
+        *data= 0;
+        data+=4;
+        printf("\n%s\n",buffer);
+        fprintf(fp, "%s",data);
+    }
     do{
         bytes= recv(socket,buffer,sizeof(buffer), 0 );
         fprintf(fp,"%s",buffer);

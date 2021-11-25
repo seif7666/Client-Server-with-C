@@ -1,1 +1,8 @@
 *.out
+*.txt
+*.html
+.vscode
+client_*
+*.png
+*.jpg
+a
