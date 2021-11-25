@@ -32,4 +32,7 @@ void add_command(Command* commands, Command* command);
 void print_command(Command* command);
 void manage_command(Command command, struct addrinfo hints);
 
+void manageGetRequest(Command command, int socket);
+void managePostRequest(Command command, int socket);
+
 #endif
