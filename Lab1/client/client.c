@@ -70,17 +70,23 @@ void receiveRequestFile(int socket , char* fileName , char*hostname){
         printf("NULL\n");
 
     char buffer[BUFSIZ];
+    memset(buffer, 0,BUFSIZ);
     int bytes;
 
     bytes= recv(socket,buffer,sizeof(buffer), 0 );
+    if(!strstr(buffer ,"200 OK")){
+        printf("--------NotFound----\n%s\n-------------\n",buffer);
+        return;
+    }
     char * data= strstr(buffer, "\r\n\r\n");
     if(data != NULL){
         *data= 0;
         data+=4;
-        printf("\n%s\n",buffer);
+        printf("-----Get Response-----------\n%s\n--------------\n",buffer);
         fprintf(fp, "%s",data);
     }
     do{
+        memset(buffer, 0,BUFSIZ);
         bytes= recv(socket,buffer,sizeof(buffer), 0 );
         printf("Bytes Received: %d\n",bytes);
         fprintf(fp,"%s",buffer);

@@ -85,7 +85,6 @@ void handleGetRequest(char* receivedBuffer, int numBytesReceived){
         totalSize -=x;
         printf("Left %d bytes \n",totalSize);
     }
-    // send(clientSocket, sendingBuffer, strlen(sendingBuffer), 0);
 }
 
 int readFile(FILE* fileptr, char* buffer){
@@ -106,17 +105,15 @@ int readFile(FILE* fileptr, char* buffer){
 
 void send_404(){
     char *message = "HTTP/1.1 404 Not Found\r\n"
-        "Connection: close\r\n"
+        "Connection: keep-alive\r\n"
         "Content-Length: 9\r\n\r\nNot Found";
     send(clientSocket, message, strlen(message), 0);
 }
 
 void sendHttpOK(int fileSize,char *contentType){
     char buffer[100];
+    memset(buffer, 0, 100);
     sprintf(buffer, "HTTP/1.1 200 OK\r\n");
-    // send(clientSocket, buffer, strlen(buffer),0);
-
-
 
     if(contentType != 0){
     sprintf(buffer+strlen(buffer), "Connection: keep-alive\r\n");
@@ -127,11 +124,6 @@ void sendHttpOK(int fileSize,char *contentType){
 
     sprintf(buffer+strlen(buffer), "Content-Type: %s\r\n",contentType);
     }
-
-    // sprintf(buffer, "Transfer-Encoding: chunked\r\n");
-    // send(clientSocket, buffer, strlen(buffer), 0);
-
-
     sprintf(buffer+strlen(buffer), "\r\n");
     send(clientSocket, buffer, strlen(buffer), 0);
 
