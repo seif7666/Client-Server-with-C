@@ -9,8 +9,12 @@ void read_input_file(Command* commands, char* filename){
         char* method= strtok(line, " ");
         char* filePath= strtok(NULL," ");
         char* hostname= strtok(NULL, " ");
+        char *p =strchr(hostname, '\n');
+        if(p != 0)
+            *p = 0;
+            
         char* port= strtok(NULL, " ");
-        if (port != NULL)
+        if (port != NULL && port[strlen(port)-1] == '\n')
             port[strlen(port)-1]= '\0';
         Command *command = (Command*)malloc(sizeof(Command));
         init_command(command, strcmp(GET_REQUEST_STR,method) ? POST_REQUEST : GET_REQUEST , filePath,hostname, port ==NULL ? "80":port);

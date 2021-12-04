@@ -154,4 +154,9 @@ void managePostRequest(Command command, int socket){
     send(socket, buffer, strlen(buffer), 0);
     printf("Sent Headers:\n%s", buffer);
     sendFileToSocket(fileptr,fileSize,socket);
+
+    char receiveBuffer[BUFSIZ];
+    memset(receiveBuffer, 0, BUFSIZ);
+    int bytes_received= recv(socket, receiveBuffer, BUFSIZ,0);
+    printf("///////////////\n%s\n/////////",receiveBuffer); 
 }

@@ -49,8 +49,6 @@ void handlePostRequest(char* buffer, int bytesReceived){
 
     sendHttpOK(0,0);
 
-    close(clientSocket);
-
 } 
 
 void handleGetRequest(char* receivedBuffer, int numBytesReceived){
