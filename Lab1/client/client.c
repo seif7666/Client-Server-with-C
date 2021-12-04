@@ -91,14 +91,67 @@ void manageGetRequest(Command command, int socket){
     char buffer[2048];
     sprintf(buffer, "GET /%s HTTP/1.1\r\n", command.filePath);
     sprintf(buffer + strlen(buffer), "Host: %s:%s\r\n", command.hostname, command.port);
-    sprintf(buffer + strlen(buffer), "Connection: close\r\n");
-    // sprintf(buffer + strlen(buffer), "User-Agent: honpwc web_get 1.0\r\n");
+    sprintf(buffer + strlen(buffer), "Connection: keep-alive\r\n");
     sprintf(buffer + strlen(buffer), "\r\n");
     send(socket, buffer, strlen(buffer), 0);
     printf("Sent Headers:\n%s", buffer);
     receiveRequestFile(socket , command.filePath, command.hostname);
 }
 
-void managePostRequest(Command command, int socket){
 
+/**
+ * We need to specify length and type of posted file
+ */
+void addTypeAndLengthToBuffer(char* buffer, int fileSize, char* fileName){
+    char contentName[30];
+    setContentType(fileName, contentName);
+    sprintf(buffer + strlen(buffer), "Content-Type: %s\r\n",contentName);
+    //Now we get the total length of the file.
+    sprintf(buffer+strlen(buffer), "Content-Length: %d\r\n",fileSize);
+}
+
+
+void sendFileToSocket(FILE* fptr, int size, int socket){
+    char sendBuffer[BUFSIZ];
+    int sent= 0;
+    while(sent <= size){
+        memset(sendBuffer,0,sizeof(sendBuffer));
+        char *bufptr= sendBuffer;
+        int length= 0;
+        while((bufptr < sendBuffer+ BUFSIZ) &&(!feof(fptr))){
+            *bufptr= fgetc(fptr);
+            bufptr++;
+            length++;
+        }
+        // printf("%d\n----------------\n",length);
+        int x= send(socket,sendBuffer, length, 0);
+        printf("Sent= %d\n",sent+x);
+        if(x > 0)
+            sent +=x;
+        else{
+            break; //Connection was closed.
+        }
+    }
+    fclose(fptr);
+}
+
+void managePostRequest(Command command, int socket){
+    FILE* fileptr= fopen(command.filePath, "r");
+    if(fileptr == NULL){
+        printf("Error!File: \"%s\" was not found!\n",command.filePath);
+        return;
+    }
+    fseek(fileptr, 0,SEEK_END);
+    int fileSize= ftell(fileptr);
+    fseek(fileptr, 0, SEEK_SET);
+
+    char buffer[2048];
+    sprintf(buffer, "POST /%s HTTP/1.1\r\n",command.filePath);
+    sprintf(buffer + strlen(buffer), "Host: %s:%s\r\n", command.hostname, command.port);
+    sprintf(buffer + strlen(buffer), "Connection: keep-alive\r\n");
+    addTypeAndLengthToBuffer(buffer, fileSize,command.filePath);
+    sprintf(buffer + strlen(buffer), "\r\n");
+    send(socket, buffer, strlen(buffer), 0);
+    printf("Sent Headers:\n%s", buffer);
+    sendFileToSocket(fileptr,fileSize,socket);
 }

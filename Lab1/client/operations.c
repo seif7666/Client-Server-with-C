@@ -43,6 +43,18 @@ void setFilePathAndDirectory(char* fileNameBuffer, const char* request, char* fi
     printf("Token: %s\n",token);
     sprintf(fileNameBuffer,"%s_%s",request,token);
     int check = mkdir(fileNameBuffer,0777);
-
     sprintf(fileNameBuffer+strlen(fileNameBuffer),"/%s",fileName);
+}
+
+
+void setContentType(char* fileName, char* contentName){
+    if(strstr(fileName, "html") != 0)
+        sprintf(contentName, "text/html");
+    else if(strstr(fileName,"txt") != 0)
+        sprintf(contentName, "text/plain");
+    else if(strstr(fileName, "png"))
+        sprintf(contentName, "image/png");
+    else { //Images only
+        sprintf(contentName, "image/jpeg");
+    }
 }
