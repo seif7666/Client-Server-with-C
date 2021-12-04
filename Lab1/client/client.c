@@ -130,7 +130,7 @@ void sendFileToSocket(FILE* fptr, int size, int socket){
             length++;
         }
         // printf("%d\n----------------\n",length);
-        int x= send(socket,sendBuffer, length, 0);
+        int x= send(socket,sendBuffer, strlen(sendBuffer), 0);
         printf("Sent= %d\n",sent+x);
         if(x > 0)
             sent +=x;

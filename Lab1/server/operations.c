@@ -11,6 +11,7 @@ int exitWithMessage(char* message){
 int manageClient(int cs){
     clientSocket= cs;
     char buffer[MAX_FILE_SIZE];
+    memset(buffer,0,sizeof(buffer));
     ssize_t numBytesReceived= recv(clientSocket, buffer, BUFSIZ, 0);
     if(numBytesReceived > 0){
         buffer[numBytesReceived]= '\0';
@@ -31,6 +32,8 @@ int manageSendingData(char* receivedBuffer, int bytesReceived){
 
 void handlePostRequest(char* buffer, int bytesReceived){
     //Look for content-type and size
+    char* fileName= strstr(buffer,"/")+1;
+
     char* contentTypePtr= strstr(buffer, "Content-Type") + 14;
     char* typeTerminator= strstr(contentTypePtr, "\r");
 
@@ -43,10 +46,29 @@ void handlePostRequest(char* buffer, int bytesReceived){
 
     *lengthTerminator=0;
     *typeTerminator=0;
+
+    // *fileTerminator=0;
+    int contentLength= atoi(contentLengthPtr);
     printf("Content is <%s>\n",contentTypePtr);
     printf("Length is %d\n",atoi(contentLengthPtr));
-    printf("Data is \"\"\"%s\"\"\"\n",data);
-
+    fileName= strtok(fileName, " ");
+    printf("File: %s\n",fileName);
+    // printf("Data is \"\"\"%s\"\"\"\n",data);
+    FILE *fp= fopen(fileName,"w");
+    int received= strlen(data);
+    fwrite(data,1,strlen(data),fp);
+    while(received < contentLength){
+        memset(buffer, 0, sizeof(buffer));
+        int bytes=recv(clientSocket, buffer,sizeof(buffer), 0);
+        if(bytes > 0){
+            int writeLength= bytes > (contentLength-received) ? contentLength-received : bytes;
+            fwrite(buffer, 1, writeLength,fp);
+            received += bytes;
+        }
+        else
+            break;
+    }
+    fclose(fp);
     sendHttpOK(0,0);
 
 } 
