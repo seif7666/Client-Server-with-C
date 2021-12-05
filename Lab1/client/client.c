@@ -30,6 +30,7 @@ int main(int argc, char** argv){
 }
 
 void manage_command(Command command, struct addrinfo hints){
+    printf("////////////////////////////Implementing New Command//////////////////////////////////////////\n");
     struct addrinfo *res;
     if(getaddrinfo(command.hostname, command.port, &hints, &res)<0){
         printf("Get addr failed for hostname {%s}!\n",command.hostname);
@@ -59,38 +60,39 @@ void manage_command(Command command, struct addrinfo hints){
     }
     freeaddrinfo(res);
     close(sock);
+    printf("\n\n\n\n");
 }
 void receiveRequestFile(int socket , char* fileName , char*hostname){
 
     char filePath[50];
     setFilePathAndDirectory(filePath,GET_REQUEST_STR,fileName, hostname);
-    printf("%s\n",filePath);
-    FILE *fp= fopen(filePath, "w");
+    // printf("%s\n",filePath);
+    FILE *fp= fopen(filePath, "wb");
     if(fp == NULL)
         printf("NULL\n");
 
     char buffer[BUFSIZ];
     memset(buffer, 0,BUFSIZ);
     int bytes;
-
     bytes= recv(socket,buffer,sizeof(buffer), 0 );
+    printf("--------------------------GET RESPONSE------------------------\n%s",buffer);
     if(!strstr(buffer ,"200 OK")){
-        printf("--------NotFound----\n%s\n-------------\n",buffer);
+        printf("\n-----------------------------------------------------------------------\n");
         return;
     }
     char * data= strstr(buffer, "\r\n\r\n");
     if(data != NULL){
         *data= 0;
         data+=4;
-        printf("-----Get Response-----------\n%s\n--------------\n",buffer);
         fprintf(fp, "%s",data);
     }
     do{
         memset(buffer, 0,BUFSIZ);
         bytes= recv(socket,buffer,sizeof(buffer), 0 );
-        printf("Bytes Received: %d\n",bytes);
+        printf("%s",buffer);
         fprintf(fp,"%s",buffer);
     }while(bytes>0);
+    printf("\n-----------------------------------Saved to %s-----------------------------------\n",filePath);
     fclose(fp);
 }
 void manageGetRequest(Command command, int socket){
@@ -99,8 +101,8 @@ void manageGetRequest(Command command, int socket){
     sprintf(buffer + strlen(buffer), "Host: %s:%s\r\n", command.hostname, command.port);
     sprintf(buffer + strlen(buffer), "Connection: keep-alive\r\n");
     sprintf(buffer + strlen(buffer), "\r\n");
+    printf("---------------------GET REQUEST----------------\n%s\n-------------------\n", buffer);
     send(socket, buffer, strlen(buffer), 0);
-    printf("Sent Headers:\n%s", buffer);
     receiveRequestFile(socket , command.filePath, command.hostname);
 }
 
@@ -120,6 +122,15 @@ void addTypeAndLengthToBuffer(char* buffer, int fileSize, char* fileName){
 void sendFileToSocket(FILE* fptr, int size, int socket){
     char sendBuffer[BUFSIZ];
     int sent= 0;
+
+    // memset(buffer,0,sizeof(buffer));
+    // int bytesRead= 0;
+    // int length;
+    // while((length=fread(buffer+bytesRead, 1,sizeof(buffer+bytesRead),fileptr))){
+    //     bytesRead += length;
+    // }
+    // // printf("File:\n\n\n%s\n\n",buffer);
+    // fclose(fileptr);
     while(sent <= size){
         memset(sendBuffer,0,sizeof(sendBuffer));
         char *bufptr= sendBuffer;
@@ -129,8 +140,10 @@ void sendFileToSocket(FILE* fptr, int size, int socket){
             bufptr++;
             length++;
         }
+        *bufptr=0;
+        length--;
         // printf("%d\n----------------\n",length);
-        int x= send(socket,sendBuffer, strlen(sendBuffer), 0);
+        int x= send(socket,sendBuffer, length, 0);
         printf("Sent= %d\n",sent+x);
         if(x > 0)
             sent +=x;
@@ -142,7 +155,7 @@ void sendFileToSocket(FILE* fptr, int size, int socket){
 }
 
 void managePostRequest(Command command, int socket){
-    FILE* fileptr= fopen(command.filePath, "r");
+    FILE* fileptr= fopen(command.filePath, "rb");
     if(fileptr == NULL){
         printf("Error!File: \"%s\" was not found!\n",command.filePath);
         return;
@@ -158,11 +171,11 @@ void managePostRequest(Command command, int socket){
     addTypeAndLengthToBuffer(buffer, fileSize,command.filePath);
     sprintf(buffer + strlen(buffer), "\r\n");
     send(socket, buffer, strlen(buffer), 0);
-    printf("Sent Headers:\n%s", buffer);
+    printf("---------------------POST REQUEST----------------\n%s\n-------------------\n", buffer);
     sendFileToSocket(fileptr,fileSize,socket);
 
     char receiveBuffer[BUFSIZ];
     memset(receiveBuffer, 0, BUFSIZ);
     int bytes_received= recv(socket, receiveBuffer, BUFSIZ,0);
-    printf("///////////////\n%s\n/////////",receiveBuffer); 
+    printf("---------------------POST REQUEST----------------\n%s\n-------------------\n", buffer);
 }

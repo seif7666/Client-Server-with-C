@@ -44,7 +44,7 @@ void print_command(Command* command){
 void setFilePathAndDirectory(char* fileNameBuffer, const char* request, char* fileName, char* hostName){
     char* token= strtok(hostName,".");
     token= strtok(NULL,".");
-    printf("Token: %s\n",token);
+    // printf("Token: %s\n",token);
     sprintf(fileNameBuffer,"%s_%s",request,token);
     int check = mkdir(fileNameBuffer,0777);
     sprintf(fileNameBuffer+strlen(fileNameBuffer),"/%s",fileName);
