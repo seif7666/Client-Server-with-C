@@ -62,3 +62,17 @@ void setContentType(char* fileName, char* contentName){
         sprintf(contentName, "image/jpeg");
     }
 }
+
+int getContentLength(const char* buffer){
+    char *ptr= strstr(buffer,"Content-Length:");
+    if( ptr==NULL)
+        return 0;
+    ptr +=15;
+    char * terminal= strchr(ptr,'\r');
+    char c= *terminal;
+    *terminal= 0;
+    int x= atoi(ptr);
+    *terminal= c;
+    // printf("Content-Length: %d\n",x);
+    return x;
+}

@@ -71,7 +71,7 @@ void receiveRequestFile(int socket , char* fileName , char*hostname){
     if(fp == NULL)
         printf("NULL\n");
 
-    char buffer[BUFSIZ];
+    unsigned char buffer[BUFSIZ];
     memset(buffer, 0,BUFSIZ);
     int bytes;
     bytes= recv(socket,buffer,sizeof(buffer), 0 );
@@ -80,18 +80,32 @@ void receiveRequestFile(int socket , char* fileName , char*hostname){
         printf("\n-----------------------------------------------------------------------\n");
         return;
     }
+    int content_length= getContentLength(buffer);
     char * data= strstr(buffer, "\r\n\r\n");
     if(data != NULL){
         *data= 0;
         data+=4;
-        fprintf(fp, "%s",data);
+        int length= 0;
+        while(length < strlen(data)){
+         length +=fwrite (data+length , 1, strlen(data+length), fp);
+        }
     }
-    do{
+    content_length-=strlen(data);
+    while(content_length > 0){
         memset(buffer, 0,BUFSIZ);
         bytes= recv(socket,buffer,sizeof(buffer), 0 );
+        printf("Bytes Received: %d\n",bytes);
         printf("%s",buffer);
-        fprintf(fp,"%s",buffer);
-    }while(bytes>0);
+
+        int length= 0;
+        while(length < bytes){
+            printf("Length is %d\n",length);
+            length +=fwrite (buffer+length , 1, strlen(buffer+length), fp);
+            break;
+        }
+        content_length -= bytes;
+
+    }
     printf("\n-----------------------------------Saved to %s-----------------------------------\n",filePath);
     fclose(fp);
 }

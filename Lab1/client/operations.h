@@ -42,5 +42,6 @@ void managePostRequest(Command command, int socket);
 void setFilePathAndDirectory(char* fileNameBuffer, const char* request, char* fileName, char* hostName);
 
 void setContentType(char* fileName, char* contentName);
+int getContentLength(const char* buffer);
 
 #endif
