@@ -2,35 +2,29 @@
 
 #define MAX_FILE_SIZE 400000
 
-int clientSocket;
-int exitWithMessage(char* message){
-    printf("%s\n",message);
-    exit(-1);
-}
 
 int manageClient(int cs){
-    clientSocket= cs;
     char buffer[MAX_FILE_SIZE];
     memset(buffer,0,sizeof(buffer));
-    ssize_t numBytesReceived= recv(clientSocket, buffer, BUFSIZ, 0);
+    ssize_t numBytesReceived= recv(cs, buffer, BUFSIZ, 0);
     if(numBytesReceived > 0){
         buffer[numBytesReceived]= '\0';
         printf("Received: %s\n",buffer);
         char sendingBuffer[MAX_FILE_SIZE];
-        int length=manageSendingData(buffer, numBytesReceived);
+        int length=manageSendingData(buffer, numBytesReceived ,cs);
     }
     return numBytesReceived;
 }
 
-int manageSendingData(char* receivedBuffer, int bytesReceived){
+int manageSendingData(char* receivedBuffer, int bytesReceived , int clientSocket){
     if(strstr(receivedBuffer, "GET") != 0)
-         handleGetRequest(receivedBuffer,bytesReceived);
+         handleGetRequest(receivedBuffer,bytesReceived , clientSocket);
     else if(strstr(receivedBuffer,"POST") != 0)
-        handlePostRequest(receivedBuffer, bytesReceived);
+        handlePostRequest(receivedBuffer, bytesReceived, clientSocket);
     return 0;
 }
 
-void handlePostRequest(char* buffer, int bytesReceived){
+void handlePostRequest(char* buffer, int bytesReceived, int clientSocket){
     //Look for content-type and size
     char* fileName= strstr(buffer,"/")+1;
 
@@ -69,11 +63,11 @@ void handlePostRequest(char* buffer, int bytesReceived){
             break;
     }
     fclose(fp);
-    sendHttpOK(0,0);
+    sendHttpOK(0,0,clientSocket);
 
 } 
 
-void handleGetRequest(char* receivedBuffer, int numBytesReceived){
+void handleGetRequest(char* receivedBuffer, int numBytesReceived , int clientSocket){
     //It starts with a GET, so we skip 4 characters
     char *ptr= receivedBuffer+5; //Beginning of file name.
     char* nameEnd= ptr;
@@ -84,8 +78,8 @@ void handleGetRequest(char* receivedBuffer, int numBytesReceived){
     printf("String is %s\n",ptr);
     FILE *fileptr=fopen(ptr, "r");
     if(fileptr == NULL){
-        send_404();
-        return 0;
+        send_404(clientSocket);
+        return;
     }
     char filetype[20];
     setContentType(ptr,filetype);
@@ -94,7 +88,7 @@ void handleGetRequest(char* receivedBuffer, int numBytesReceived){
     int fileSize= ftell(fileptr);
     fseek(fileptr, 0, SEEK_SET);
 
-    sendHttpOK(fileSize,filetype);
+    sendHttpOK(fileSize,filetype, clientSocket);
     
     char sendingBuffer[fileSize];
     readFile(fileptr,sendingBuffer);
@@ -125,14 +119,14 @@ int readFile(FILE* fileptr, char* buffer){
 }
 
 
-void send_404(){
+void send_404(int clientSocket){
     char *message = "HTTP/1.1 404 Not Found\r\n"
         "Connection: keep-alive\r\n"
         "Content-Length: 9\r\n\r\nNot Found";
     send(clientSocket, message, strlen(message), 0);
 }
 
-void sendHttpOK(int fileSize,char *contentType){
+void sendHttpOK(int fileSize,char *contentType, int clientSocket){
     char buffer[100];
     memset(buffer, 0, 100);
     sprintf(buffer, "HTTP/1.1 200 OK\r\n");

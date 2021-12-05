@@ -1,8 +1,15 @@
 #include "tcpserver.h"
+#define TOTAL_WAITING_TIME 15
+#define MINIMUM_WAITING_TIME 2
+
+#define STDIN 0
 
 
 int clients_connected; //To Keep track of total clients having persistent connections.
+pthread_mutex_t lock; // To avoid race condition on clients_connected
 
+
+char terminateProgram= 0;
 const char* SERVER_IP= "127.0.0.1";
 
 int main(int argc, char *argv[]){
@@ -37,71 +44,77 @@ int main(int argc, char *argv[]){
     printf("Listening ...\n");
 
 
-    fd_set master, read_fds;
-    int fdmax= sock, newfd;
-    FD_ZERO(&master);
-    FD_ZERO(&read_fds);
-    FD_SET(sock,&master);
-
     clients_connected= 0;
 
     struct sockaddr_storage remoteaddr; // client address
     socklen_t addrlen;
-                    
-
+    
+    fd_set master;
+    FD_ZERO(&master);
+    FD_SET(sock, &master);
+    FD_SET(STDIN, &master);
+    
 
     while(1){
-        read_fds= master;
-        printf("Before Select\n");
-        if(select(fdmax+1, &read_fds,NULL,NULL, /*Timout*/NULL) ==-1){
-            exitWithMessage("Select Failed!");
-        }
-        printf("Returned From Select!\n");
-        for(int i= 0; i<= fdmax ; i++){
-            if(FD_ISSET(i,&read_fds)){
-                if(i==sock){
-                    addrlen= sizeof(remoteaddr);
-                    newfd= accept(sock, (struct sockaddr *) &remoteaddr, &addrlen);
-                    clients_connected ++;
-                    if(newfd == -1) exitWithMessage("Accept Failed!");
+        fd_set reads= master;
+        select(sock+1, &reads,NULL,NULL,NULL);
+        if(FD_ISSET(sock, &reads)){
+            addrlen= sizeof(remoteaddr);
+            int newClientSocket= accept(sock, (struct sockaddr *) &remoteaddr, &addrlen);
+            if(newClientSocket == -1) exitWithMessage("Accept Failed!");
+            char* remoteIP[INET6_ADDRSTRLEN];
+            printf("New Connection established with %s\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP,INET6_ADDRSTRLEN));
+            clients_connected ++;
 
-                    FD_SET(newfd, &master);
-                    if(newfd > fdmax)
-                        fdmax= newfd;
-                    char* remoteIP[INET6_ADDRSTRLEN];
-                    printf("New Connection established with %s\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP,INET6_ADDRSTRLEN));
-                }//i==sock
-                else{ // Read from client
-                    pthread_t newThread;
-                    ClientThreadArgs arguments;
-                    arguments.clientSocket= i;
-                    arguments.master= &master;
-
-                    pthread_create(&newThread, &arguments,&manageThreadedClient,NULL );
-                }
-            }
+            pthread_t newThread;
+            ClientThreadArgs arguments;
+            arguments.clientSocket= newClientSocket;
+            
+            pthread_create(&newThread, NULL,&manageThreadedClient, (void*)&arguments );
         }
+        else //Stdin
+            break;
     }
+    terminateProgram= 1;
     close(sock);
+    printf("Terminating...\n");
     
     return 0;
 }
 
-void manageThreadedClient(ClientThreadArgs* args){
-    /**
-     * Starting timeou
-     * 
-     */
-    while(1){
+void manageThreadedClient(void* arguments){
+    ClientThreadArgs * args= (ClientThreadArgs*) arguments;
+    
+    struct timeval tv;
+    tv.tv_usec = 500000;
 
-        int isConnected=manageClient(args->clientSocket);
-        if(!isConnected){
-            printf("Socket %d disconnected\n",args->clientSocket);
-            close(args->clientSocket);
-            FD_CLR(args->clientSocket, args->master);
+    while(!terminateProgram){
+
+        tv.tv_sec = TOTAL_WAITING_TIME / clients_connected;
+        if (tv.tv_sec < MINIMUM_WAITING_TIME)
+            tv.tv_sec= MINIMUM_WAITING_TIME;
+        printf("New Timeout is %d\n",tv.tv_sec);
+
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(args->clientSocket, &readfds);
+
+        select(args->clientSocket + 1, &readfds, NULL, NULL, &tv);
+        
+        if (FD_ISSET(args->clientSocket, &readfds)){
+            int isConnected=manageClient(args->clientSocket);
+            if(!isConnected){
+                printf("Socket %d disconnected\n",args->clientSocket);
+                break;
+            }
+        }        
+        else{
+            printf("Client {%d} Timed Out\n",args->clientSocket);
             break;
         }
     }
+    close(args->clientSocket);
+    decreaseClients();
 }
 
 
@@ -111,4 +124,18 @@ void *get_in_addr(struct sockaddr *sa){
     }
 
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
+
+int exitWithMessage(char* message){
+    printf("%s\n",message);
+    terminateProgram= 1;
+    exit(-1);
+}
+
+void decreaseClients(){
+     pthread_mutex_lock(&lock);
+     clients_connected--;
+     printf("Total number of connected clients now is : %d\n",clients_connected);
+    pthread_mutex_unlock(&lock);
 }

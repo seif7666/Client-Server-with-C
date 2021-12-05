@@ -13,14 +13,14 @@
 
 #define MAXPENDING 5
 
-int exitWithMessage(char* message);
+
 int manageClient(int clientSocket);
-int manageSendingData(char* receivedBuffer, int numBytesReceived);
-void handleGetRequest(char* receivedBuffer, int numBytesReceived);
-void handlePostRequest(char* buffer, int bytesReceived);
+int manageSendingData(char* receivedBuffer, int numBytesReceived, int clientSocket);
+void handleGetRequest(char* receivedBuffer, int numBytesReceived, int clientSocket);
+void handlePostRequest(char* buffer, int bytesReceived,int clientSocket);
 int readFile(FILE* fileName, char* buffer);
 void setContentType(char* fileName, char* contentName);
-void sendHttpOK(int fileSize,char *contentType);
-void send_404();
+void sendHttpOK(int fileSize,char *contentType,int clientSocket);
+void send_404(int clientSocket);
 
 #endif

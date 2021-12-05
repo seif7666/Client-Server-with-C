@@ -3,9 +3,10 @@
 #include <pthread.h>
 
 typedef struct clientArgs{
-    fd_set* master;
     int clientSocket;
 }ClientThreadArgs;
 
+int exitWithMessage(char* message);
 void *get_in_addr(struct sockaddr *sa);
-void manageThreadedClient(ClientThreadArgs* args);
+void manageThreadedClient(void* args);
+void decreaseClients();
