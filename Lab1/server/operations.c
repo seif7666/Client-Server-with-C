@@ -44,10 +44,10 @@ void handlePostRequest(char* buffer, int bytesReceived, int clientSocket){
 
     // *fileTerminator=0;
     int contentLength= atoi(contentLengthPtr);
-    printf("Content is <%s>\n",contentTypePtr);
-    printf("Length is %d\n",atoi(contentLengthPtr));
+    // printf("Content is <%s>\n",contentTypePtr);
+    // printf("Length is %d\n",atoi(contentLengthPtr));
     fileName= strtok(fileName, " ");
-    printf("File: %s\n",fileName);
+    // printf("File: %s\n",fileName);
     // printf("Data is \"\"\"%s\"\"\"\n",data);
     FILE *fp= fopen(fileName,"w");
     int received= strlen(data);
@@ -64,7 +64,9 @@ void handlePostRequest(char* buffer, int bytesReceived, int clientSocket){
             break;
     }
     fclose(fp);
+    printf("--------------------------POST RESPONSE------------------------\n");
     sendHttpOK(0,0,clientSocket);
+    printf("----------------------------------------------------------------\n");
 
 } 
 
@@ -143,6 +145,7 @@ void sendHttpOK(int fileSize,char *contentType, int clientSocket){
     sprintf(buffer+strlen(buffer), "Content-Type: %s\r\n",contentType);
     }
     sprintf(buffer+strlen(buffer), "\r\n");
+    printf("%s",buffer);
     send(clientSocket, buffer, strlen(buffer), 0);
 
 }

@@ -10,7 +10,8 @@ pthread_mutex_t lock; // To avoid race condition on clients_connected
 
 
 char terminateProgram= 0;
-const char* SERVER_IP= "127.0.0.1";
+const char* SERVER_IP= "192.168.1.110";//192.168.1.110
+
 
 int main(int argc, char *argv[]){
     if(argc != 2){

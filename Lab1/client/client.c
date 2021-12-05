@@ -94,12 +94,12 @@ void receiveRequestFile(int socket , char* fileName , char*hostname){
     while(content_length > 0){
         memset(buffer, 0,BUFSIZ);
         bytes= recv(socket,buffer,sizeof(buffer), 0 );
-        printf("Bytes Received: %d\n",bytes);
+        // printf("Bytes Received: %d\n",bytes);
         printf("%s",buffer);
 
         int length= 0;
         while(length < bytes){
-            printf("Length is %d\n",length);
+            // printf("Length is %d\n",length);
             length +=fwrite (buffer+length , 1, strlen(buffer+length), fp);
             break;
         }
