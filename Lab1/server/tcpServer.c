@@ -1,13 +1,7 @@
-#include "operations.h"
-#include <sys/time.h>
+#include "tcpserver.h"
 
-void *get_in_addr(struct sockaddr *sa){
- if (sa->sa_family == AF_INET) {
-    return &(((struct sockaddr_in*)sa)->sin_addr);
- }
 
- return &(((struct sockaddr_in6*)sa)->sin6_addr);
- }
+int clients_connected; //To Keep track of total clients having persistent connections.
 
 const char* SERVER_IP= "127.0.0.1";
 
@@ -49,14 +43,11 @@ int main(int argc, char *argv[]){
     FD_ZERO(&read_fds);
     FD_SET(sock,&master);
 
+    clients_connected= 0;
 
     struct sockaddr_storage remoteaddr; // client address
     socklen_t addrlen;
                     
-
-
-
-
 
 
     while(1){
@@ -71,6 +62,7 @@ int main(int argc, char *argv[]){
                 if(i==sock){
                     addrlen= sizeof(remoteaddr);
                     newfd= accept(sock, (struct sockaddr *) &remoteaddr, &addrlen);
+                    clients_connected ++;
                     if(newfd == -1) exitWithMessage("Accept Failed!");
 
                     FD_SET(newfd, &master);
@@ -79,13 +71,13 @@ int main(int argc, char *argv[]){
                     char* remoteIP[INET6_ADDRSTRLEN];
                     printf("New Connection established with %s\n",inet_ntop(remoteaddr.ss_family,get_in_addr((struct sockaddr*) &remoteaddr),remoteIP,INET6_ADDRSTRLEN));
                 }//i==sock
-                else{
-                    int isConnected=manageClient(i);
-                    if(!isConnected){
-                        printf("Socket %d disconnected\n",i);
-                        close(i);
-                        FD_CLR(i, &master);
-                    }
+                else{ // Read from client
+                    pthread_t newThread;
+                    ClientThreadArgs arguments;
+                    arguments.clientSocket= i;
+                    arguments.master= &master;
+
+                    pthread_create(&newThread, &arguments,&manageThreadedClient,NULL );
                 }
             }
         }
@@ -93,4 +85,30 @@ int main(int argc, char *argv[]){
     close(sock);
     
     return 0;
+}
+
+void manageThreadedClient(ClientThreadArgs* args){
+    /**
+     * Starting timeou
+     * 
+     */
+    while(1){
+
+        int isConnected=manageClient(args->clientSocket);
+        if(!isConnected){
+            printf("Socket %d disconnected\n",args->clientSocket);
+            close(args->clientSocket);
+            FD_CLR(args->clientSocket, args->master);
+            break;
+        }
+    }
+}
+
+
+void *get_in_addr(struct sockaddr *sa){
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
