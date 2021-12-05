@@ -134,8 +134,8 @@ int exitWithMessage(char* message){
 }
 
 void decreaseClients(){
-     pthread_mutex_lock(&lock);
-     clients_connected--;
-     printf("Total number of connected clients now is : %d\n",clients_connected);
+    pthread_mutex_lock(&lock);
+    clients_connected--;
+    printf("Total number of connected clients now is : %d\n",clients_connected);
     pthread_mutex_unlock(&lock);
 }

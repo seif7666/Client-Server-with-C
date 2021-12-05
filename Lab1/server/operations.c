@@ -8,8 +8,8 @@ int manageClient(int cs){
     memset(buffer,0,sizeof(buffer));
     ssize_t numBytesReceived= recv(cs, buffer, BUFSIZ, 0);
     if(numBytesReceived > 0){
-        buffer[numBytesReceived]= '\0';
-        printf("Received: %s\n",buffer);
+        // buffer[numBytesReceived]= '\0';
+        // printf("Received: %s\n",buffer);
         char sendingBuffer[MAX_FILE_SIZE];
         int length=manageSendingData(buffer, numBytesReceived ,cs);
     }
@@ -38,6 +38,7 @@ void handlePostRequest(char* buffer, int bytesReceived, int clientSocket){
     *data= 0;
     data+=4;
 
+    printf("--------------------------POST REQUEST-----------------------\n%s\n----------------------- ",buffer);
     *lengthTerminator=0;
     *typeTerminator=0;
 
@@ -69,14 +70,16 @@ void handlePostRequest(char* buffer, int bytesReceived, int clientSocket){
 
 void handleGetRequest(char* receivedBuffer, int numBytesReceived , int clientSocket){
     //It starts with a GET, so we skip 4 characters
+    printf("------------------------GET REQUEST-----------------------\n%s\n-------------------------\n",receivedBuffer);
     char *ptr= receivedBuffer+5; //Beginning of file name.
     char* nameEnd= ptr;
-    printf("///%c///",*ptr);
+    // printf("///%c///",*ptr);
     while(*nameEnd != ' ')
         nameEnd++;
     *nameEnd='\0';
-    printf("String is %s\n",ptr);
+
     FILE *fileptr=fopen(ptr, "r");
+    printf("-------------GET RESPONSE--------\n");
     if(fileptr == NULL){
         send_404(clientSocket);
         return;
@@ -101,6 +104,7 @@ void handleGetRequest(char* receivedBuffer, int numBytesReceived , int clientSoc
         totalSize -=x;
         printf("Left %d bytes \n",totalSize);
     }
+    printf("%s\n-------------------------------\n",sendingBuffer);
 }
 
 int readFile(FILE* fileptr, char* buffer){
@@ -123,6 +127,7 @@ void send_404(int clientSocket){
     char *message = "HTTP/1.1 404 Not Found\r\n"
         "Connection: keep-alive\r\n"
         "Content-Length: 9\r\n\r\nNot Found";
+    printf("%s\n-------------------------------\n",message);
     send(clientSocket, message, strlen(message), 0);
 }
 
