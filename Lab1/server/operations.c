@@ -78,7 +78,7 @@ void handleGetRequest(char* receivedBuffer, int numBytesReceived , int clientSoc
         nameEnd++;
     *nameEnd='\0';
 
-    FILE *fileptr=fopen(ptr, "r");
+    FILE *fileptr=fopen(ptr, "rb");
     printf("-------------GET RESPONSE--------\n");
     if(fileptr == NULL){
         send_404(clientSocket);
@@ -95,7 +95,7 @@ void handleGetRequest(char* receivedBuffer, int numBytesReceived , int clientSoc
     
     char sendingBuffer[fileSize];
     readFile(fileptr,sendingBuffer);
-    printf("Total Size is %d\n",fileSize);
+    printf("%s\n-------------------------------\n",sendingBuffer);
     ssize_t sent= 0;
     int totalSize=fileSize;
     while(totalSize >0){
@@ -104,18 +104,15 @@ void handleGetRequest(char* receivedBuffer, int numBytesReceived , int clientSoc
         totalSize -=x;
         printf("Left %d bytes \n",totalSize);
     }
-    printf("%s\n-------------------------------\n",sendingBuffer);
 }
 
 int readFile(FILE* fileptr, char* buffer){
     //Now we start reading.
     memset(buffer,0,sizeof(buffer));
-    char fileBuffer[50];
     int bytesRead= 0;
-    while(fgets(fileBuffer, 50,fileptr)){
-        int length= strlen(fileBuffer);
+    int length;
+    while((length=fread(buffer+bytesRead, 1,sizeof(buffer+bytesRead),fileptr))){
         bytesRead += length;
-        strcat(buffer,fileBuffer);
     }
     // printf("File:\n\n\n%s\n\n",buffer);
     fclose(fileptr);
